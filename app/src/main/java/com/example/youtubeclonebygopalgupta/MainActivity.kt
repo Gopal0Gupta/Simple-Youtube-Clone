@@ -120,29 +120,28 @@ fun SearchBar(query: String, onQueryChanged: (String) -> Unit) {
 @Composable
 fun VideoPlayer(videoUrl: String) {
     val context = LocalContext.current
-
-    val mediaItem = MediaItem.Builder()
-        .setUri(videoUrl)
-        .build()
-    val exoPlayer = remember(context, mediaItem) {
-        ExoPlayer.Builder(context)
-            .build()
-            .also { exoPlayer ->
-                exoPlayer.setMediaItem(mediaItem)
-                exoPlayer.prepare()
-                exoPlayer.playWhenReady = false
-                exoPlayer.repeatMode = REPEAT_MODE_OFF
-            }
+    val exoPlayer = remember {
+        ExoPlayer.Builder(context).build().apply {
+            playWhenReady = false
+            repeatMode = REPEAT_MODE_OFF
+        }
     }
-
-    DisposableEffect(
-        AndroidView(factory = {
-            StyledPlayerView(context).apply {
+    LaunchedEffect(videoUrl) {
+        val mediaItem = MediaItem.Builder().setUri(videoUrl).build()
+        exoPlayer.setMediaItem(mediaItem)
+        exoPlayer.prepare()
+    }
+    AndroidView(
+        factory = { ctx ->
+            StyledPlayerView(ctx).apply {
                 player = exoPlayer
             }
-        })
-    ) {
-        onDispose { exoPlayer.release() }
+        },
+        modifier = Modifier.fillMaxWidth()
+    )
+    DisposableEffect(Unit) {
+        onDispose {
+            exoPlayer.release()
+        }
     }
 }
-
